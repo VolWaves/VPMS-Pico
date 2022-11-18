@@ -19,26 +19,29 @@ static __inline void CRITICAL_REGION_EXIT(void) {
 	restore_interrupts(int_cache);
 }
 
-bool timer_4hz_callback(struct repeating_timer* t) {
-	printf("Repeat at %lld\n", time_us_64());
-	uevt_bc_e(UEVT_TIMER_4HZ);
+bool timer_100hz_callback(struct repeating_timer* t) {
+	uevt_bc_e(UEVT_TIMER_100HZ);
 	return true;
 }
 
 void led_blink_routine(void) {
 	static uint8_t _tick = 0;
 	_tick += 1;
-	if(_tick & 0x1) {
+	if(_tick == 64) {
 		gpio_put(LED_PIN, 1);
-	} else {
+	}
+	if(_tick == 74) {
 		gpio_put(LED_PIN, 0);
+	}
+	if(_tick == 100) {
+		_tick = 0;
 	}
 }
 
 void temperature_routine(void) {
 	static uint16_t tick = 0;
 	static float _t = 0;
-	if(tick > 8) {
+	if(tick > 200) {
 		tick = 0;
 		int32_t t_adc = adc_read();
 		_t = 27.0 - ((t_adc - 876) / 2.136f);
@@ -49,7 +52,7 @@ void temperature_routine(void) {
 
 void main_handler(uevt_t* evt) {
 	switch(evt->evt_id) {
-		case UEVT_TIMER_4HZ:
+		case UEVT_TIMER_100HZ:
 			led_blink_routine();
 			temperature_routine();
 			break;
@@ -67,6 +70,10 @@ int main() {
 	stdio_init_all();
 
 	adc_init();
+	adc_gpio_init(26);
+	adc_gpio_init(27);
+	adc_gpio_init(28);
+	adc_gpio_init(29);
 	adc_set_temp_sensor_enabled(true);
 	adc_select_input(4);
 
@@ -74,7 +81,7 @@ int main() {
 	gpio_set_dir(LED_PIN, GPIO_OUT);
 
 	struct repeating_timer timer;
-	add_repeating_timer_ms(250, timer_4hz_callback, NULL, &timer);
+	add_repeating_timer_ms(10, timer_100hz_callback, NULL, &timer);
 
 	while(true) {
 		app_sched_execute();

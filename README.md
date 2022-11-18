@@ -1,7 +1,8 @@
-# pico template with scheduler
-rpi pico template with scheduler
+# VolWaves Power Meter System
 
-## prepare
+沃尔微功耗测试系统(VPMS) RP2040 端
+
+## 环境搭建
 
 ### Get pico SDK
 
@@ -20,21 +21,25 @@ echo export PICO_SDK_PATH=$PWD >> ~/.profile
 sudo apt update && sudo apt install -y cmake make ninja-build gcc g++ openssl libssl-dev cmake gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
 ```
 
-## Compile
+### Compile
 
 ```shell
 make
 ```
 
-## Usage
+## IO
+
+
+
+## 用法
 
 ```shell
-# build
+# 编译
 make
-# clang-format
+# 格式化
 make format
-# clear build
+# 清理
 make clean
-# rebuild
+# 重新编译
 make rebuild
 ```
