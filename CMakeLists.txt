@@ -16,7 +16,7 @@ add_executable(VPMS_Pico main.c)
 # hardware_clocks hardware_i2c hardware_pio hardware_interp hardware_rtc hardware_uart hardware_irq hardware_resets
 # pico_unique_id
 # tinyusb_host tinyusb_device tinyusb_board
-target_link_libraries(VPMS_Pico scheduler pico_stdlib hardware_adc hardware_sync)
+target_link_libraries(VPMS_Pico scheduler pico_stdlib hardware_pio hardware_adc hardware_sync)
 
 # Create map/bin/hex/uf2 files
 pico_add_extra_outputs(VPMS_Pico)

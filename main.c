@@ -7,9 +7,55 @@
 #include "scheduler/uevent.h"
 #include "scheduler/scheduler.h"
 
+#include "hardware/pio.h"
+#include "hardware/clocks.h"
+#include "ws2812/ws2812.pio.h"
+
 #include "platform.h"
 
-#define LED_PIN PICO_DEFAULT_LED_PIN
+#define IS_RGBW false
+#define NUM_PIXELS 1
+#define WS2812_PIN 16
+
+static inline void put_pixel(uint32_t pixel_grb) {
+	pio_sm_put_blocking(pio0, 0, pixel_grb << 8u);
+}
+#include <math.h>
+typedef struct RGBColor {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+} RGBColor;
+
+RGBColor hsv2rgb(float h, float s, float v) {
+	float r, g, b;
+
+	int i = floor(h * 6);
+	float f = h * 6 - i;
+	float p = v * (1 - s);
+	float q = v * (1 - f * s);
+	float t = v * (1 - (1 - f) * s);
+
+	switch(i % 6) {
+		case 0: r = v, g = t, b = p; break;
+		case 1: r = q, g = v, b = p; break;
+		case 2: r = p, g = v, b = t; break;
+		case 3: r = p, g = q, b = v; break;
+		case 4: r = t, g = p, b = v; break;
+		case 5: r = v, g = p, b = q; break;
+	}
+
+	RGBColor color;
+	color.r = r * 255;
+	color.g = g * 255;
+	color.b = b * 255;
+
+	return color;
+}
+
+static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b) {
+	return ((uint32_t)(r) << 8) | ((uint32_t)(g) << 16) | (uint32_t)(b);
+}
 
 volatile uint32_t int_cache;
 static __inline void CRITICAL_REGION_ENTER(void) {
@@ -28,10 +74,11 @@ void led_blink_routine(void) {
 	static uint8_t _tick = 0;
 	_tick += 1;
 	if(_tick == 64) {
-		gpio_put(LED_PIN, 1);
+		RGBColor color = hsv2rgb(0.7, 0.99, 0.2);
+		put_pixel(urgb_u32(color.r, color.g, color.b));
 	}
 	if(_tick == 74) {
-		gpio_put(LED_PIN, 0);
+		put_pixel(0);
 	}
 	if(_tick == 100) {
 		_tick = 0;
@@ -69,6 +116,10 @@ int main() {
 
 	stdio_init_all();
 
+	PIO pio = pio0;
+	uint offset = pio_add_program(pio, &ws2812_program);
+	ws2812_program_init(pio, 0, offset, WS2812_PIN, 800000, IS_RGBW);
+
 	adc_init();
 	adc_gpio_init(26);
 	adc_gpio_init(27);
@@ -76,9 +127,6 @@ int main() {
 	adc_gpio_init(29);
 	adc_set_temp_sensor_enabled(true);
 	adc_select_input(4);
-
-	gpio_init(LED_PIN);
-	gpio_set_dir(LED_PIN, GPIO_OUT);
 
 	struct repeating_timer timer;
 	add_repeating_timer_ms(10, timer_100hz_callback, NULL, &timer);
