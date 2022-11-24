@@ -8,6 +8,13 @@
 	#define LOG_RAW(...) printf(__VA_ARGS__)
 #endif
 
+#define WS2812_PIN (16)
+
+#define OLED_DC_PIN (12)
+#define OLED_RES_PIN (13)
+#define OLED_SDA_PIN (14)
+#define OLED_CLK_PIN (15)
+
 // REGEXP: #define UEVT_\S+_BASE
 #define UEVT_APP_BASE (0xAE00)
 #define UEVT_APP_POWERUP (UEVT_APP_BASE | 0x01)

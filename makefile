@@ -8,7 +8,7 @@ BUILD_DIR = build
 default: build
 
 build:
-	cmake .. -G Ninja -B$(BUILD_DIR) -S.
+	cmake -DPICO_COPY_TO_RAM=1 .. -G Ninja -B$(BUILD_DIR) -S.
 	ninja -C $(BUILD_DIR)
 
 clean:

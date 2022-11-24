@@ -13,9 +13,10 @@
 
 #include "platform.h"
 
+#include "display.h"
+
 #define IS_RGBW false
 #define NUM_PIXELS 1
-#define WS2812_PIN 16
 
 static inline void put_pixel(uint32_t pixel_grb) {
 	pio_sm_put_blocking(pio0, 0, pixel_grb << 8u);
@@ -57,12 +58,17 @@ static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b) {
 	return ((uint32_t)(r) << 8) | ((uint32_t)(g) << 16) | (uint32_t)(b);
 }
 
-volatile uint32_t int_cache;
+
+#include "pico/sync.h"
+critical_section_t scheduler_lock;
+static __inline void CRITICAL_REGION_INIT(void) {
+	critical_section_init(&scheduler_lock);
+}
 static __inline void CRITICAL_REGION_ENTER(void) {
-	int_cache = save_and_disable_interrupts();
+	critical_section_enter_blocking(&scheduler_lock);
 }
 static __inline void CRITICAL_REGION_EXIT(void) {
-	restore_interrupts(int_cache);
+	critical_section_exit(&scheduler_lock);
 }
 
 bool timer_100hz_callback(struct repeating_timer* t) {
@@ -109,16 +115,35 @@ void main_handler(uevt_t* evt) {
 	}
 }
 
+#include "hardware/pll.h"
+#include "hardware/clocks.h"
+#include "hardware/xosc.h"
+#include "hardware/structs/pll.h"
+#include "hardware/structs/clocks.h"
+void clock_init(void) {
+	clock_configure(clk_sys,
+					CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLKSRC_CLK_SYS_AUX,
+					CLOCKS_CLK_SYS_CTRL_AUXSRC_VALUE_CLKSRC_PLL_USB,
+					48 * MHZ,
+					48 * MHZ);
+	pll_deinit(pll_sys);
+	clock_configure(clk_peri,
+					0,
+					CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLK_SYS,
+					48 * MHZ,
+					48 * MHZ);
+	stdio_init_all();
+}
+
 int main() {
+	xosc_init();
+	stdio_init_all();
+	clock_init();
+
+	CRITICAL_REGION_INIT();
 	app_sched_init();
 	user_event_init();
 	user_event_handler_regist(main_handler);
-
-	stdio_init_all();
-
-	PIO pio = pio0;
-	uint offset = pio_add_program(pio, &ws2812_program);
-	ws2812_program_init(pio, 0, offset, WS2812_PIN, 800000, IS_RGBW);
 
 	adc_init();
 	adc_gpio_init(26);
@@ -127,6 +152,14 @@ int main() {
 	adc_gpio_init(29);
 	adc_set_temp_sensor_enabled(true);
 	adc_select_input(4);
+
+	sleep_ms(10);
+	display_init();
+
+	PIO pio = pio0;
+	uint offset = pio_add_program(pio, &ws2812_program);
+	ws2812_program_init(pio, 0, offset, WS2812_PIN, 800000, IS_RGBW);
+
 
 	struct repeating_timer timer;
 	add_repeating_timer_ms(10, timer_100hz_callback, NULL, &timer);
