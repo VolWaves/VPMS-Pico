@@ -8,7 +8,7 @@ project(VPMS_Pico C CXX ASM)
 
 pico_sdk_init()
 
-add_definitions(-DG_LOG_ENABLED=1 -DEVT_LOG_ENABLED=1)
+add_definitions(-DG_LOG_ENABLED=1 -DEVT_LOG_ENABLED=0)
 add_subdirectory(scheduler)
 # add_subdirectory(display)
 add_subdirectory(lvgl)
@@ -34,6 +34,7 @@ target_link_libraries(VPMS_Pico PRIVATE
 	hardware_xosc
 	hardware_pio
 	hardware_adc
+	hardware_dma
 	hardware_spi
 	hardware_sync
 	lvgl
