@@ -15,6 +15,7 @@
 #include "platform.h"
 
 #include "display.h"
+#include "ui.h"
 
 #define IS_RGBW false
 #define NUM_PIXELS 1
@@ -126,10 +127,11 @@ void main_handler(uevt_t* evt) {
 		case UEVT_TIMER_125HZ:
 			led_blink_routine();
 			// temperature_routine();
+			ui_period_hanlder(8);
 			break;
 		case UEVT_TIMER_62HZ: {
 			static uint8_t slower = 0;
-			if((slower++ & 0xF) == 0) {
+			if((slower++ & 0x3) == 0) {
 				adc_capture_test();
 			}
 		} break;
@@ -235,6 +237,7 @@ elem_type quick_select_median(elem_type arr[], uint16_t n) {
 }
 
 void adc_capture_test(void) {
+	static elem_type m1_min = 4096, m2_min = 4096, m3_min = 4096;
 	uint dma_chan = dma_claim_unused_channel(true);
 	dma_channel_config dma_cfg = dma_channel_get_default_config(dma_chan);
 
@@ -264,14 +267,17 @@ void adc_capture_test(void) {
 		m = 0;
 	}
 	uint32_t volt = (uint32_t)m * 107 / 50;
-	printf("V = %d mv\n", volt);
+	printf("U = %d mv\n", volt);
 
 	for(int i = 0; i < 7; i++) {
 		median_buf[i] = capture_buf[i * 4 + 1];
 	}
 	elem_type m1 = quick_select_median(median_buf, 7);
-	if(m1 < 2105) {
-		m1 = 2105;
+	if(m1 < m1_min) {
+		m1_min = m1;
+	}
+	if(m1 < m1_min) {
+		m1 = m1_min;
 	}
 	// printf("ADC1 = %d\n", m1);
 
@@ -279,8 +285,11 @@ void adc_capture_test(void) {
 		median_buf[i] = capture_buf[i * 4 + 2];
 	}
 	elem_type m2 = quick_select_median(median_buf, 7);
-	if(m2 < 2105) {
-		m2 = 2105;
+	if(m2 < m2_min) {
+		m2_min = m2;
+	}
+	if(m2 < m2_min) {
+		m2 = m2_min;
 	}
 
 	// printf("ADC2 = %d\n", m2);
@@ -289,29 +298,33 @@ void adc_capture_test(void) {
 		median_buf[i] = capture_buf[i * 4 + 3];
 	}
 	elem_type m3 = quick_select_median(median_buf, 7);
-	if(m3 < 2101) {
-		m3 = 2101;
+	if(m3 < m3_min) {
+		m3_min = m3;
+	}
+	if(m3 < m3_min) {
+		m3 = m3_min;
 	}
 	// printf("ADC3 = %d\n", m3);
 
 	uint32_t current;
 	if(m3 < 3770) {
-		current = (((uint32_t)m3 - 2101) * 37 + 5) / 10;
+		current = (((uint32_t)m3 - m3_min) * 37 + 5) / 10;
 	} else if(m2 < 3770) {
-		current = (((uint32_t)m2 - 2105) * 93 + 5) / 10;
+		current = (((uint32_t)m2 - m2_min) * 93 + 5) / 10;
 	} else {
-		current = (((uint32_t)m1 - 2105) * 300 + 5) / 10;
+		current = (((uint32_t)m1 - m1_min) * 300 + 5) / 10;
 	}
 	printf("I = %d mA\n", current);
 
 	uint32_t power = current * volt / 1000;
 	printf("P = %d mW\n", power);
-
-	if(volt > 600) {
-		uint32_t resistance = volt * 1000 / current;
+	uint32_t resistance = 0;
+	if(current > 100) {
+		resistance = volt * 1000 / current;
 		printf("R = %d mOhm\n", resistance);
 	}
-
+	uint32_t s[4] = { volt, current, power, resistance };
+	ui_data_update(s);
 	// for (int i = 0; i < 16; ++i) {
 	//     printf("%-3d, ", capture_buf[i]);
 	//     if (i % 4 == 3)
@@ -332,6 +345,7 @@ int main() {
 
 	sleep_ms(10);
 	display_init();
+	ui_init();
 
 	PIO pio = pio0;
 	uint offset = pio_add_program(pio, &ws2812_program);

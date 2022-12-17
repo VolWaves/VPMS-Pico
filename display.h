@@ -2,6 +2,10 @@
 
 #ifndef _DISPLAY_H_
 #define _DISPLAY_H_
+#include "lvgl/lvgl.h"
+
+#define DISP_W (240)
+#define DISP_H (240)
 
 #define ST7789_240x240_XSTART 0
 #define ST7789_240x240_YSTART 0
@@ -51,6 +55,7 @@
 #define WHITE   0xFFFF
 
 void display_init(void);
-
+void set_draw_windows(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1);
+void draw_bitmap(lv_color_t* color, size_t length);
 
 #endif

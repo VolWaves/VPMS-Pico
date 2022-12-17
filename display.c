@@ -6,7 +6,6 @@
 #include "platform.h"
 
 #include "display.h"
-#include "lvgl/lvgl.h"
 
 #define SPI_USE spi1
 #define CMD_END (0xFF)
@@ -32,7 +31,6 @@ void set_draw_windows(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 	spi_write_setting((const uint8_t*)cmd2);
 	spi_write_setting((const uint8_t*)cmd3);
 }
-
 void fill_color(uint16_t color) {
 	set_draw_windows(0, 0, 239, 239);
 	gpio_put(OLED_DC_PIN, true);
@@ -52,6 +50,9 @@ void draw_pixel(int16_t x, int16_t y, uint16_t color) {
 	c[0] = color >> 8;
 	c[1] = color;
 	spi_write((const uint8_t*)c, 2);
+}
+void draw_bitmap(lv_color_t* color, size_t length) {
+	spi_write((const uint8_t*)color, length*2);
 }
 
 #define spi_write_cmd(arr...) do{\

@@ -8,6 +8,11 @@ project(VPMS_Pico C CXX ASM)
 
 pico_sdk_init()
 
+# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE "Release")
+
+# set(CMAKE_CXX_FLAGS "-O3 -Wall")
+
 add_definitions(-DG_LOG_ENABLED=1 -DEVT_LOG_ENABLED=0)
 add_subdirectory(scheduler)
 # add_subdirectory(display)
@@ -16,6 +21,7 @@ add_subdirectory(lvgl)
 add_executable(VPMS_Pico
 	main.c
 	display.c
+	ui.c
 )
 
 
