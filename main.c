@@ -237,6 +237,7 @@ elem_type quick_select_median(elem_type arr[], uint16_t n) {
 }
 
 void adc_capture_test(void) {
+	static uint32_t old_datas[4] = { 0, 0, 0, 0 };
 	static elem_type m1_min = 4096, m2_min = 4096, m3_min = 4096;
 	uint dma_chan = dma_claim_unused_channel(true);
 	dma_channel_config dma_cfg = dma_channel_get_default_config(dma_chan);
@@ -319,17 +320,24 @@ void adc_capture_test(void) {
 	uint32_t power = current * volt / 1000;
 	printf("P = %d mW\n", power);
 	uint32_t resistance = 0;
+	uint32_t datas[4] = { volt, current, power, resistance };
 	if(current > 100) {
 		resistance = volt * 1000 / current;
+		datas[3] = resistance;
 		printf("R = %d mOhm\n", resistance);
+	} else {
+		datas[0] = 0;
+		datas[1] = 0;
+		datas[2] = 0;
+		datas[3] = 0xFFFFFFFF;
 	}
-	uint32_t s[4] = { volt, current, power, resistance };
-	ui_data_update(s);
-	// for (int i = 0; i < 16; ++i) {
-	//     printf("%-3d, ", capture_buf[i]);
-	//     if (i % 4 == 3)
-	//         printf("\n");
-	// }
+	if((datas[0] != old_datas[0]) || (datas[1] != old_datas[1]) || (datas[2] != old_datas[2]) || (datas[3] != old_datas[3])) {
+		old_datas[0] = datas[0];
+		old_datas[1] = datas[1];
+		old_datas[2] = datas[2];
+		old_datas[3] = datas[3];
+		ui_data_update(old_datas);
+	}
 }
 
 int main() {

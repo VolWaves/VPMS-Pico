@@ -57,7 +57,7 @@ void ui_data_update(uint32_t* a) {
 	lv_label_set_text_fmt(label_volt, "U= %"LV_PRIu32 "mV", a[0]);
 	lv_label_set_text_fmt(label_current, "I= %"LV_PRIu32 "mA", a[1]);
 	lv_label_set_text_fmt(label_power, "P= %"LV_PRIu32 "mW", a[2]);
-	if(a[1] > 600) {
+	if(a[3] != 0xFFFFFFFF) {
 		lv_label_set_text_fmt(label_resistance, "R= %"LV_PRIu32 "mR", a[3]);
 	} else {
 		lv_label_set_text(label_resistance, "R= ----");
