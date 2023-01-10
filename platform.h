@@ -12,8 +12,8 @@
 
 #define OLED_DC_PIN (12)
 #define OLED_RES_PIN (13)
-#define OLED_SDA_PIN (14)
-#define OLED_CLK_PIN (15)
+#define OLED_SDA_PIN (15)
+#define OLED_CLK_PIN (14)
 
 // REGEXP: #define UEVT_\S+_BASE
 #define UEVT_APP_BASE (0xAE00)
