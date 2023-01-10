@@ -98,13 +98,10 @@ void screen_init(void) {
 }
 
 void display_init(void) {
-	uint8_t _a = 0x00;
 	spi_init(SPI_USE, 40000000);
 	spi_set_format(SPI_USE, 8, SPI_CPOL_1, SPI_CPHA_0, SPI_MSB_FIRST);
 	gpio_set_function(OLED_SDA_PIN, GPIO_FUNC_SPI);
 	gpio_set_function(OLED_CLK_PIN, GPIO_FUNC_SPI);
-
-	spi_write(&_a, 1);
 
 	gpio_init(OLED_DC_PIN);
 	gpio_set_dir(OLED_DC_PIN, GPIO_OUT);
